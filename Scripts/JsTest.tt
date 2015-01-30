@@ -1,0 +1,58 @@
+﻿<# String classname = "core";  //Change this to the name of the string #>   
+<# String namespaceName = "op"; #>
+<#@ output extension=".js"   #> 
+
+QUnit.module("<#= namespaceName #>.<#= classname #>", {
+    setup: function () {
+
+        ok(true,"Test Data Created");
+    }, teardown: function () {
+        myList = undefined;
+        ok(true, "Test Data Deleted")
+    }
+});
+
+test("Test1 ", function () {
+    var actual = 1;
+	var expected  =1;
+    ok(actual == expected,"Test Passed");
+});
+
+test("Test2", function () {
+    var actual = 1;
+	var expected  =1;
+    equal(actual,expected,"Test Passed");
+});
+
+module("<#= namespaceName #>.<#= classname #>.mock", {
+    setup: function () {
+
+        ok(true,"Test Data Created");
+    }, teardown: function () {
+        myList = undefined;
+        ok(true, "Test Data Deleted")
+    }
+});
+
+///mocking objects
+MyClass = function() {}
+
+MyClass.prototype = {
+  someMethod: function() { return "hello"; }
+}
+
+obj = new MyClass();
+
+test("stubbing method", function() {
+  stub(obj, "someMethod", function() { return "world" });
+  equal(obj.someMethod(), "world"); // ok, will pass
+});
+
+test("stubbing method easier", function(){
+  stub(obj, "someMethod", "world"); //can also pass return value
+  equal(obj.someMethod(), "world"); // ok, will pass
+});
+
+test("method after stub method", function() {
+  equal(obj.someMethod(), "hello"); // ok too
+});

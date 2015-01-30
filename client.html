@@ -1,0 +1,173 @@
+﻿<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title><%= mytitle %></title>
+    <script src="Scripts/jquery-1.9.1.min.js"></script>
+    <script src="http://127.0.0.1:81/socket.io/socket.io.js"></script>
+    <script src="Scripts/thirdParty/jquery-ui-1.10.1.custom.js"></script>
+    <script src="Scripts/shims/jquery.ui.touch-punch.js"></script>
+    <link href="style.css" rel="stylesheet" />
+    <script>
+
+        $(document).ready(function () {
+
+            ShowItem('gamecontainer', true);
+            ShowItem('formcontainer', false);
+        });
+        var ship = new Image();
+
+        var clientsocketid = '';
+        var socket = io.connect('http://127.0.0.1:81');
+        
+        var idofitembeingdragged = 0;
+        var canselecteditembedragged = false;
+
+        socket.on('maxclients', function (data) {
+
+
+        });
+
+        socket.on('SendTilesAndRender', function (data) {
+
+            RenderTiles(data);
+        });
+
+
+
+
+        socket.on('serverupdatedname', function (data) {
+
+            // setup the UI
+            document.getElementById("spanusername").innerHTML = "Welcome '" + data.updatedname + "' to the game";
+
+        });
+
+
+        socket.on('updatetileposition', function (data) {
+            $("#" + data.id).css({ top: data.ypos + 'px' });
+            $("#" + data.id).css({ left: data.xpos + 'px' });
+
+            $("#" + data.id).attr("candrag", data.candrag);
+        });
+
+        socket.on('updatedragstatus', function (data) {
+            $("#" + data.id).attr("candrag", data.candrag);
+        });
+
+
+        
+
+        socket.on('broadcastupdatenewmarioposition', function (data) {
+
+            var canvas = document.getElementById('canv');
+            ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            for (var i = 0; i < data.marioplayers.length; i++) {
+                console.log("player " + i + " " + data.marioplayers[i].marioplayer.x);
+               
+                ctx.drawImage(ship, data.marioplayers[i].marioplayer.x, data.marioplayers[i].marioplayer.y);
+                ctx.fillText(data.marioplayers[i].username, data.marioplayers[i].marioplayer.x + 0, data.marioplayers[i].marioplayer.y - 0);
+            }
+            // setup the UI
+
+        });
+
+
+        function RenderTiles(data) {
+
+            style = "position: absolute; left: 150px; top: 121px;"
+            var tiles = JSON.parse(data.arrayofTiles);
+
+            for (var i = 0; i < tiles.length; i++) {
+                var htmlstring = '<a id="' + tiles[i].id + '"  candrag="true" class="tile" style="position: absolute; left: ' + tiles[i].x + 'px;' + ' top: ' + tiles[i].y + 'px;' + '">' + tiles[i].letter + '</a>';
+                $('#tilecontainer').append(htmlstring);
+            }
+
+            // make them draggable
+            $('#tilecontainer a').draggable({
+                stack: "#tilecontainer a",
+                containment: "#tilecontainer", scroll: false,
+                stop: function () {
+
+                    $(this).attr("candrag", "true");
+                    canselecteditembedragged = false;
+                    // broadcast
+
+                    socket.emit('canmovetime', { id: idofitembeingdragged, candrag: 'true' });
+                },
+                start: function () {
+                    idofitembeingdragged = this.id;
+
+                    if ($(this).attr("candrag") == "true") {
+                        canselecteditembedragged = true;
+                    }
+                
+                },
+                drag: function (ev, ui) {
+                    // send throught he id and the x y position to the server
+                 
+                    if (idofitembeingdragged > 0 && canselecteditembedragged) {
+                            // send to sever 
+                            var offset = $(this).offset();
+                            var xPos = ui.offset.left;
+                            var yPos = ui.offset.top;
+                            socket.emit('tilemoving', { id: idofitembeingdragged, xpos: xPos, ypos: yPos, candrag:'false' });
+                        
+                    }
+                },
+            });
+        }
+
+
+     
+
+        function ShowItem(ident, flag) {
+            if (flag == true) {
+                document.getElementById(ident).style.visibility = "visible";
+            }
+            else {
+                document.getElementById(ident).style.visibility = "hidden";
+            }
+        }
+
+        function EmitUpdateUsername() {
+            // get the username
+            var uname = document.getElementById('username').value;
+            socket.emit('updateusername', { clientid: clientsocketid, username: uname });
+        }
+
+        // handle the keydowns
+        document.onkeydown = function (e) {
+            socket.emit('updatemarioposition', { keycode: e.keyCode, socketid: clientsocketid });
+        };
+    </script>
+</head>
+<body>
+    Drag the tiles around the screen to make some funky words.
+    <div id="formcontainer">
+        <form method="post" action="/">
+            Username :
+            <input type="text" name="username" id="username" /><br />
+            Socket Id :
+            <input type="text" id="hdClientId" name="hdClientId" value="" readonly="true" />
+            <input type="button" value="submit" onclick="EmitUpdateUsername(); return false;" />
+        </form>
+    </div>
+
+    <div id="gamecontainer" style="visibility: hidden">
+        <div id="tilecontainer">
+        </div>
+
+        <span id="spanusername"></span>
+    </div>
+    <div id="gamecontainertoomanyplayers" style="visibility: hidden">
+        Sorry but there are too many players, come back later!
+    </div>
+    <div id="clientlist" style="visibility: hidden">
+    </div>
+    <canvas id="canv" width="900" height="400"></canvas>
+</body>
+</html>

@@ -1,0 +1,45 @@
+<# String classname = "core";  //Change this to the name of the string #>   
+<# String namespaceName = "op"; #>
+<#@ output extension=".js"   #> 
+var  <#= namespaceName #> =  <#= namespaceName #> || {};
+
+; (function () {
+
+    // --------- Public API --------- //
+
+
+    function <#= classname #>() {
+    /// <summary>
+    /// Constructor
+    /// </summary>
+
+    }
+
+
+    <#= classname #>.prototype.PublicFunction = function (data) {
+	    /// <summary>
+    /// Example Public Function
+    /// </summary>
+    /// <param name="data"></param>
+        this._data = data;
+        // we call the privateFunction with the "this" context
+        privateFunction.call(this);
+        // note: could use, "privateFunction.apply(this,arguments)" if we wanted to pass all arguments 
+    }
+
+    // --------- /Public API --------- //    
+
+    // --------- Privates --------- //
+
+
+    function privateFunction() {
+	    /// <summary>
+    /// Example Private Function 
+    /// </summary>
+
+    }
+    // --------- /Privates --------- //
+
+
+    <#= namespaceName #>.<#= classname #> = <#= classname #>;
+})();

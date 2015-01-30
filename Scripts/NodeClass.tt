@@ -1,0 +1,22 @@
+﻿<# String classname = "Tile";  //Change this to the name of the string #>   
+<#@ output extension=".js"   #> 
+
+var <#= classname #> = function (){
+
+	var Setter = function(x){
+		//Layout for a basic setter function
+	}
+
+	var Getter = function(){
+		//Layout for basic Getter function
+		return x;
+	}
+
+	return {
+		Setter: Setter,
+		Getter:Getter
+		}
+
+};
+
+exports.<#= classname #> = <#= classname #>;

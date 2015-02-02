@@ -10,8 +10,10 @@ var tileArray = new Array();
 var express = require('express'), http = require('http'), app = express();
 
 var io = require('socket.io');
+var connect = require('connect')
 var fs = require('fs')
 var Tile = require("./Tile").Tile;
+var bodyParser     = require('body-parser');
 
 // variables and their makeup
 //var tile = { id: 0, character: 'a', x: 10, y: 10 };
@@ -20,16 +22,26 @@ var client = { name: 'Anonymous', socketid: 1 };
 
 // ensure that form variables get parsed correctly
 
-app.use(express.bodyParser());
+//app.use(express.bodyParser());
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json());
 app.engine('.html', require('ejs').__express);
 app.set('view engine', 'html');
 
-app.configure(function () {
-    app.use(express.cookieParser());
-    app.use(express.session({ secret: 'secretzsd', key: 'express.sid' }));
+//app.configure(function () {
+//    app.use(express.cookieParser());
+//    app.use(express.session({ secret: 'secretzsd', key: 'express.sid' }));
+//    app.use('/media', express.static(__dirname + '/media'));
+//    app.use(express.static(__dirname + '/')); // you an replace the / with /public etc
+//});
+
+var env = process.env.NODE_ENV || 'development';
+if ('development' == env) {
+   //app.use(express.cookieParser());
+//    app.use(express.session({ secret: 'secretzsd', key: 'express.sid' }));
     app.use('/media', express.static(__dirname + '/media'));
     app.use(express.static(__dirname + '/')); // you an replace the / with /public etc
-});
+}
 
 
 // http://www.raymondcamden.com/index.cfm/2012/8/29/Thoughts-on-Nodejs-and-Express for ejs

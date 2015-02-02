@@ -7,6 +7,7 @@
     <script src="Scripts/jquery-1.9.1.min.js"></script>
    
     <script src="/socket.io/socket.io.js"></script>
+    <script src="http://http://fridgemagnet.azurewebsites.net/socket.io/socket.io.js"></script>
     <script src="Scripts/thirdParty/jquery-ui-1.10.1.custom.js"></script>
     <script src="Scripts/shims/jquery.ui.touch-punch.js"></script>
     <link href="style.css" rel="stylesheet" />
@@ -20,8 +21,9 @@
         var ship = new Image();
 
         var clientsocketid = '';
-        //var socket = io.connect('http://127.0.0.1:3000');
+       // var socket = io.connect('http://127.0.0.1:3000');
         var socket = io.connect();
+        io.connect();
         
         var idofitembeingdragged = 0;
         var canselecteditembedragged = false;

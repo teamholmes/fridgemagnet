@@ -47,7 +47,7 @@ GenerateTiles();
 
 app.listen(httprequestport);
 
-var io = require('socket.io').listen(socketioport);
+//var io = require('socket.io').listen(socketioport);
 
 io.set('log level', 1);
 

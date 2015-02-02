@@ -1,5 +1,6 @@
 var socketioport = process.env.VCAP_APP_PORT || 81;
-var httprequestport = process.env.VCAP_APP_PORT ||8001;
+//var httprequestport = process.env.VCAP_APP_PORT ||8001;
+var httprequestport = process.env.port ||8001;
 
 var maxclients = 25;
 

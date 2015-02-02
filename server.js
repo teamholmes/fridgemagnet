@@ -36,12 +36,12 @@ app.set('view engine', 'html');
 //});
 
 var env = process.env.NODE_ENV || 'development';
-if ('development' == env) {
+//if ('development' == env) {
    //app.use(express.cookieParser());
 //    app.use(express.session({ secret: 'secretzsd', key: 'express.sid' }));
     app.use('/media', express.static(__dirname + '/media'));
     app.use(express.static(__dirname + '/')); // you an replace the / with /public etc
-}
+//}
 
 
 // http://www.raymondcamden.com/index.cfm/2012/8/29/Thoughts-on-Nodejs-and-Express for ejs

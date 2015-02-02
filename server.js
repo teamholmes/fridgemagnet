@@ -7,9 +7,9 @@ var maxclients = 25;
 var clientArray = new Array();
 var tileArray = new Array();
 
-var express = require('express'), app = express();
+var express = require('express'), http = require('http'), app = express();
 
-var io = require('socket.io').listen(app)
+var io = require('socket.io');
 var fs = require('fs')
 var Tile = require("./Tile").Tile;
 
@@ -19,6 +19,7 @@ var client = { name: 'Anonymous', socketid: 1 };
 
 
 // ensure that form variables get parsed correctly
+
 app.use(express.bodyParser());
 app.engine('.html', require('ejs').__express);
 app.set('view engine', 'html');
@@ -45,9 +46,22 @@ app.get('/', function (req, res) {
 GenerateTiles();
 
 
-app.listen(httprequestport);
+//app.listen(httprequestport);
+app.set('port', process.env.PORT || 3000);
+
+var server = http.createServer(app).listen(app.get('port'), function(){
+  console.log('Express server listening on port ' + app.get('port'));
+});
+
 
 //var io = require('socket.io').listen(socketioport);
+
+io = require('socket.io').listen(server);
+        io.set('transports', ['websocket',
+            'xhr-polling', 'jsonp-polling', 'htmlfile'
+        ]);
+        io.set('origins', '*:*');
+
 
 io.set('log level', 1);
 

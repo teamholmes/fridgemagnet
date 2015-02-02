@@ -18,18 +18,7 @@ body {
 	text-shadow: -1px -1px 1px rgb(40,40,40);
 	font-family: "NewsGoth Cn BT", Optima-Thin, "MS Gothic";
 	font-size:24px;
-	background-image: -webkit-gradient(
-		linear,
-		right bottom,
-		left top,
-		color-stop(0.5, rgb(222,196,139)),
-		color-stop(0.7, rgb(230,204,147))
-	);
-	background-image: -moz-linear-gradient(
-		right bottom,
-		rgb(222,196,139) 50%,
-		rgb(230,204,147) 70%,
-	);
+	background-color:#d6bc83;
 	-moz-box-shadow:  0 1px 0 #b69c63, 1px 2px 0 #b69c63, 2px 3px 1px #b69c63;
 	-webkit-box-shadow: 0 1px 0 #b69c63, 1px 2px 0 #b69c63, 2px 3px 1px #b69c63;
 	box-shadow: 0 1px 0 #b69c63, 1px 2px 0 #b69c63, 2px 3px 1px #b69c63;

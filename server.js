@@ -15,41 +15,24 @@ var fs = require('fs')
 var Tile = require("./Tile").Tile;
 var bodyParser     = require('body-parser');
 
-// variables and their makeup
-//var tile = { id: 0, character: 'a', x: 10, y: 10 };
 var client = { name: 'Anonymous', socketid: 1 };
 
 
 // ensure that form variables get parsed correctly
 
-//app.use(express.bodyParser());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 app.engine('.html', require('ejs').__express);
 app.set('view engine', 'html');
 
-//app.configure(function () {
-//    app.use(express.cookieParser());
-//    app.use(express.session({ secret: 'secretzsd', key: 'express.sid' }));
-//    app.use('/media', express.static(__dirname + '/media'));
-//    app.use(express.static(__dirname + '/')); // you an replace the / with /public etc
-//});
 
 var env = process.env.NODE_ENV || 'development';
-//if ('development' == env) {
-   //app.use(express.cookieParser());
-//    app.use(express.session({ secret: 'secretzsd', key: 'express.sid' }));
     app.use('/media', express.static(__dirname + '/media'));
     app.use(express.static(__dirname + '/')); // you an replace the / with /public etc
-//}
 
 
-// http://www.raymondcamden.com/index.cfm/2012/8/29/Thoughts-on-Nodejs-and-Express for ejs
-// Handle GET requests on httprequestport
 app.get('/', function (req, res) {
-    //res.header("Connection", "keep-alive");
     res.shouldKeepAlive = true;
-   // res.sendfile(__dirname + '/client.html');
 });
 
 // create all the tiles
@@ -57,16 +40,12 @@ app.get('/', function (req, res) {
 
 GenerateTiles();
 
-
-//app.listen(httprequestport);
 app.set('port', process.env.PORT || 3000);
 
 var server = http.createServer(app).listen(app.get('port'), function(){
   console.log('Express server listening on port ' + app.get('port'));
 });
 
-
-//var io = require('socket.io').listen(socketioport);
 
 io = require('socket.io').listen(server);
         io.set('transports', ['websocket',
@@ -97,7 +76,6 @@ io.sockets.on('connection', function (socket) {
 
     socket.on('tilemoving', function (data) {
         // update the position of the tile
-       // logger(Number(data.id) + " Tile being moved : " + data.xpos + "/" + data.ypos);
         tileArray[Number(data.id)].x = data.xpos;
         tileArray[Number(data.id)].y = data.ypos;
         
@@ -130,13 +108,6 @@ io.sockets.on('connection', function (socket) {
 
 console.log("====================== SERVER STARTING ======================");
 
-// Put a friendly message on the terminal
-logger("Socket.io server on port " + socketioport );
-logger("Web  server on port " + httprequestport );
-logger("To see the tiles - enter 'http://127.0.0.1:8001/client.html' in your browser" );
-
-
-
 function logger(data)
 {
     console.log(">>>>>> " + clientArray.length + " / " + maxclients  + " " + data);
@@ -166,7 +137,6 @@ function GetClientIndexPosition(socketid) {
 
 function RemoveClientFromArray(indexpos) {
     if (indexpos >= 0) {
-        //logger("ClientArray cleanup for id " + clientArray[indexpos].socketid);
         clientArray.splice(indexpos, 1);
        
     }

@@ -5,6 +5,7 @@
     <meta charset="utf-8" />
     <title><%= mytitle %></title>
     <script src="Scripts/jquery-1.9.1.min.js"></script>
+    <!--<script src="http://127.0.0.1:3000/socket.io/socket.io.js"></script> -->
     <script src="http://fridgemagnet.azurewebsites.net/socket.io/socket.io.js"></script>
     <script src="Scripts/thirdParty/jquery-ui-1.10.1.custom.js"></script>
     <script src="Scripts/shims/jquery.ui.touch-punch.js"></script>
@@ -12,23 +13,27 @@
     <script>
 
         $(document).ready(function () {
-
             ShowItem('gamecontainer', true);
             ShowItem('formcontainer', false);
         });
+
         var ship = new Image();
 
         var clientsocketid = '';
         var socket = io.connect('http://fridgemagnet.azurewebsites.net');
+        // local version url
+        //var socket = io.connect('http://127.0.0.1:3000');
         
+
         var idofitembeingdragged = 0;
         var canselecteditembedragged = false;
 
+/*
         socket.on('maxclients', function (data) {
-
-
         });
+*/
 
+        // function to handle rendering of the tiles
         socket.on('SendTilesAndRender', function (data) {
 
             RenderTiles(data);
@@ -36,15 +41,16 @@
 
 
 
-
+/*
         socket.on('serverupdatedname', function (data) {
 
             // setup the UI
             document.getElementById("spanusername").innerHTML = "Welcome '" + data.updatedname + "' to the game";
-
         });
+*/
 
 
+        // function that updates the tileposition of the one beign dragged
         socket.on('updatetileposition', function (data) {
             $("#" + data.id).css({ top: data.ypos + 'px' });
             $("#" + data.id).css({ left: data.xpos + 'px' });
@@ -52,13 +58,13 @@
             $("#" + data.id).attr("candrag", data.candrag);
         });
 
+        // update the tile status to draggable
         socket.on('updatedragstatus', function (data) {
             $("#" + data.id).attr("candrag", data.candrag);
         });
 
 
-        
-
+/*
         socket.on('broadcastupdatenewmarioposition', function (data) {
 
             var canvas = document.getElementById('canv');
@@ -74,6 +80,7 @@
             // setup the UI
 
         });
+*/
 
 
         function RenderTiles(data) {
@@ -94,8 +101,8 @@
 
                     $(this).attr("candrag", "true");
                     canselecteditembedragged = false;
-                    // broadcast
 
+                    // broadcast
                     socket.emit('canmovetime', { id: idofitembeingdragged, candrag: 'true' });
                 },
                 start: function () {
@@ -132,7 +139,7 @@
                 document.getElementById(ident).style.visibility = "hidden";
             }
         }
-
+/*
         function EmitUpdateUsername() {
             // get the username
             var uname = document.getElementById('username').value;
@@ -143,6 +150,9 @@
         document.onkeydown = function (e) {
             socket.emit('updatemarioposition', { keycode: e.keyCode, socketid: clientsocketid });
         };
+*/
+
+
     </script>
 </head>
 <body>

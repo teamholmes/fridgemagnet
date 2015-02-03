@@ -144,7 +144,7 @@ alertToClientBrowser("ERROR Testing for creation of table");
             }
         });
 
-        socket.emit('SendTilesAndRender', { arrayofTiles: JSON.stringify(tileArray) });
+        
 
     }
     else
@@ -159,14 +159,14 @@ alertToClientBrowser("ERROR Testing for creation of table");
           {
 
             alertToClientBrowser("1");
-            alertToClientBrowser(JSON.stringify(result.data));
+            alertToClientBrowser(JSON.stringify(result.data._));
 
             // result contains the entity
-            tileArray =  JSON.parse(result.data);
+            tileArray =  JSON.parse(result.data._);
 
-            alertToClientBrowser("2");
+            alertToClientBrowser("Array length : " + tileArray.length);
 
-            alertToClientBrowser("Retrieveing tiles from db " + result.data);
+            //alertToClientBrowser("Retrieveing tiles from db " + result.data);
           }
           else
           {
@@ -175,12 +175,14 @@ alertToClientBrowser("ERROR Testing for creation of table");
         });
     }
 
+    //socket.emit('SendTilesAndRender', { arrayofTiles: JSON.stringify(tileArray) });
+
    
 });
 
 
-
-    socket.emit('SendTilesAndRender', { arrayofTiles: JSON.stringify(tileArray) });
+ alertToClientBrowser("--<><><>" +  JSON.stringify(tileArray));
+    io.socket.emit('SendTilesAndRender', { arrayofTiles: JSON.stringify(tileArray) });
 
     socket.on('tilemoving', function (data) {
         // update the position of the tile

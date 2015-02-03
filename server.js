@@ -17,6 +17,26 @@ var bodyParser     = require('body-parser');
 
 var client = { name: 'Anonymous', socketid: 1 };
 
+// setup azure storage
+//http://azure.microsoft.com/en-gb/documentation/articles/storage-nodejs-how-to-use-table-storage/
+
+var azure = require('azure-storage');
+//var azure = require('azure');
+
+var dbaccountname = "fridgemagnetstorage";
+var dbaccountkey = "s1io4G3cACTwcwVCQVNtMcscVF4pmxyHe6uWC/KWWp+t7oZDm2w1FqkWAf8Eybrxi9M4z5WaTd7SVM3BtNxmWg==";
+
+
+process.env.AZURE_STORAGE_ACCOUNT = dbaccountname;
+process.env.AZURE_STORAGE_ACCESS_KEY = dbaccountkey;
+
+// create a new table
+//var tableSvc = azure.createTableService(dbaccountname,dbaccountkey);
+var tableSvc = azure.createTableService();
+var entGen = azure.TableUtilities.entityGenerator;
+
+var dbTable = "tbltitles" + "m";
+var dbpartitionkey = dbTable + "_KEY";
 
 // ensure that form variables get parsed correctly
 
@@ -37,8 +57,6 @@ app.get('/', function (req, res) {
 
 // create all the tiles
 
-
-GenerateTiles();
 
 app.set('port', process.env.PORT || 3000);
 
@@ -64,6 +82,8 @@ io.sockets.on('connection', function (socket) {
         socket.disconnect();
     }
 
+
+
     var client = { name: 'Anonymous', socketid: socket.id };
 
     clientArray.push(client);
@@ -71,6 +91,94 @@ io.sockets.on('connection', function (socket) {
     logger('Client connected ID : ' + socket.id);
 
     logger('Sending tiles & rendercommand to client : ' + socket.id);
+
+
+
+
+// check that the table does not already exist
+tableSvc.createTableIfNotExists(dbTable, function(error, result, response){
+
+
+if (error)
+{
+alertToClientBrowser("ERROR Testing for creation of table");
+}
+
+    alertToClientBrowser("Testing for creation of table");
+    if(result == true)
+    {
+        // table newly created
+
+        GenerateTiles();
+         alertToClientBrowser("Generated tiles");
+         alertToClientBrowser("Tile length " + tileArray.length)
+
+
+    var stringrep = tileArray;
+    stringrep = JSON.stringify(tileArray);
+
+        var task = { 
+                  PartitionKey: entGen.String(dbpartitionkey),
+                  RowKey: entGen.String('1'),
+                  data: entGen.String(stringrep)
+                   };
+
+
+        // save the data
+        tableSvc.insertEntity(dbTable,task, function (error, result, response) 
+        {
+            
+            if (result)
+            {
+                alertToClientBrowser("Tiles inserted into db " + JSON.stringify(task));
+            }
+            else if (!result)
+            {
+                alertToClientBrowser("Tiles AAAA inserted into db " + JSON.stringify(task));
+            }
+
+            if(error)
+            {
+            alertToClientBrowser("error for creation of table and tiles");
+
+            }
+        });
+
+        socket.emit('SendTilesAndRender', { arrayofTiles: JSON.stringify(tileArray) });
+
+    }
+    else
+    {
+         alertToClientBrowser("Table already exists");
+        // table already exists - load in data
+
+        tableSvc.retrieveEntity(dbTable, dbpartitionkey, '1', function(error, result, response){
+        //alertToClientBrowser("---> " + JSON.stringify(result));
+        //alertToClientBrowser("Tryign to retrieve tiles from db " + error + " " + JSON.stringify(result) + " " + JSON.stringify(response));
+          if(!error)
+          {
+
+            alertToClientBrowser("1");
+            alertToClientBrowser(JSON.stringify(result.data));
+
+            // result contains the entity
+            tileArray =  JSON.parse(result.data);
+
+            alertToClientBrowser("2");
+
+            alertToClientBrowser("Retrieveing tiles from db " + result.data);
+          }
+          else
+          {
+            alertToClientBrowser("ERROR Retrieveing tiles from db " + error);
+          }
+        });
+    }
+
+   
+});
+
+
 
     socket.emit('SendTilesAndRender', { arrayofTiles: JSON.stringify(tileArray) });
 
@@ -91,7 +199,9 @@ io.sockets.on('connection', function (socket) {
 
     });
 
-   
+
+
+
 
     socket.on('disconnect', function (data) {
         
@@ -106,7 +216,15 @@ io.sockets.on('connection', function (socket) {
 });
 
 
+function alertToClientBrowser(data)
+{
+    io.sockets.emit('AlertClient', data);
+}
+
+
 console.log("====================== SERVER STARTING ======================");
+
+
 
 function logger(data)
 {

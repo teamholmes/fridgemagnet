@@ -40,6 +40,14 @@
         });
 
 
+        // function to handle rendering of the tiles
+        socket.on('AlertClient', function (data) {
+             $("#debuggerpanel").text(data);
+            
+            //alert(data);
+        });
+
+
 
 /*
         socket.on('serverupdatedname', function (data) {
@@ -157,6 +165,7 @@
 </head>
 <body>
     Drag the tiles around the screen to make some funky words (Node test)
+    <p id="debuggerpanel">Debug Info</p>
     <div id="formcontainer">
         <form method="post" action="/">
             Username :
@@ -179,5 +188,6 @@
     <div id="clientlist" style="visibility: hidden">
     </div>
     <canvas id="canv" width="900" height="400"></canvas>
+    
 </body>
 </html>

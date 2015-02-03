@@ -35,7 +35,7 @@ process.env.AZURE_STORAGE_ACCESS_KEY = dbaccountkey;
 var tableSvc = azure.createTableService();
 var entGen = azure.TableUtilities.entityGenerator;
 
-var dbTable = "tbltitles" + "m";
+var dbTable = "tbltitles" + "n";
 var dbpartitionkey = dbTable + "_KEY";
 
 // ensure that form variables get parsed correctly
@@ -74,6 +74,9 @@ io = require('socket.io').listen(server);
 
 io.set('log level', 1);
 
+
+
+
 io.sockets.on('connection', function (socket) {
 
     // max client detection
@@ -93,7 +96,34 @@ io.sockets.on('connection', function (socket) {
     logger('Sending tiles & rendercommand to client : ' + socket.id);
 
 
+function SaveTilesToDB(partkey,databasetable, arrayoftiles)
+{
+ 
+    var stringrep = arrayoftiles;
+    stringrep = JSON.stringify(tileArray);
 
+        var task = { 
+                  PartitionKey: entGen.String(partkey),
+                  RowKey: entGen.String('1'),
+                  data: entGen.String(stringrep)
+                   };
+
+    alertToClientBrowser("Trying to saving tiles to db");
+
+tableSvc.updateEntity(databasetable, task, function(error, result, response){
+  if(!error) {
+
+    var d = new Date();
+
+    alertToClientBrowser("DB Record update successful @ " + d.getHours() + ":" + d.getMinutes() + ":" + d.getSeconds());
+  }
+  else
+  {
+     alertToClientBrowser("Error Updating the database");
+  }
+});
+
+}
 
 // check that the table does not already exist
 tableSvc.createTableIfNotExists(dbTable, function(error, result, response){
@@ -144,6 +174,8 @@ alertToClientBrowser("ERROR Testing for creation of table");
             }
         });
 
+        socket.emit('SendTilesAndRender', { arrayofTiles: JSON.stringify(tileArray) });
+
         
 
     }
@@ -158,13 +190,18 @@ alertToClientBrowser("ERROR Testing for creation of table");
           if(!error)
           {
 
-            alertToClientBrowser("1");
-            alertToClientBrowser(JSON.stringify(result.data._));
+            alertToClientBrowser("Retrieveing data...");
+            //alertToClientBrowser(JSON.stringify(result.data._));
 
             // result contains the entity
             tileArray =  JSON.parse(result.data._);
 
-            alertToClientBrowser("Array length : " + tileArray.length);
+
+            socket.emit('SendTilesAndRender', { arrayofTiles: JSON.stringify(tileArray) });
+
+            
+
+            //alertToClientBrowser("Array length : " + tileArray.length);
 
             //alertToClientBrowser("Retrieveing tiles from db " + result.data);
           }
@@ -175,14 +212,15 @@ alertToClientBrowser("ERROR Testing for creation of table");
         });
     }
 
+    
     //socket.emit('SendTilesAndRender', { arrayofTiles: JSON.stringify(tileArray) });
 
    
 });
 
 
- alertToClientBrowser("--<><><>" +  JSON.stringify(tileArray));
-    io.socket.emit('SendTilesAndRender', { arrayofTiles: JSON.stringify(tileArray) });
+
+    
 
     socket.on('tilemoving', function (data) {
         // update the position of the tile
@@ -195,15 +233,14 @@ alertToClientBrowser("ERROR Testing for creation of table");
     });
 
     socket.on('canmovetime', function (data) {
+    //alertToClientBrowser("Saving to db : " + dbpartitionkey + " " + dbTable + " " + tableSvc + " " + JSON.stringify(tileArray));
+        SaveTilesToDB(dbpartitionkey,dbTable,tileArray);
+    
         // id: idofitembeingdragged, candrag: 'true'
         // let all the ther users know its being updated
         io.sockets.emit('updatedragstatus', { id: data.id, candrag: data.candrag });
 
     });
-
-
-
-
 
     socket.on('disconnect', function (data) {
         

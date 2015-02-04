@@ -7,6 +7,8 @@ var maxclients = 25;
 var clientArray = new Array();
 var tileArray = new Array();
 
+var totalTilesMoved = 1;
+
 var express = require('express'), http = require('http'), app = express();
 
 var io = require('socket.io');
@@ -37,6 +39,7 @@ var entGen = azure.TableUtilities.entityGenerator;
 
 var dbTable = "tbltitles" + "n";
 var dbpartitionkey = dbTable + "_KEY";
+var dbpartitionkeyTileMoves = dbTable + "_TileMoves";
 
 // ensure that form variables get parsed correctly
 
@@ -47,13 +50,13 @@ app.set('view engine', 'html');
 
 
 var env = process.env.NODE_ENV || 'development';
-    app.use('/media', express.static(__dirname + '/media'));
+app.use('/media', express.static(__dirname + '/media'));
     app.use(express.static(__dirname + '/')); // you an replace the / with /public etc
 
 
-app.get('/', function (req, res) {
-    res.shouldKeepAlive = true;
-});
+    app.get('/', function (req, res) {
+        res.shouldKeepAlive = true;
+    });
 
 // create all the tiles
 
@@ -66,16 +69,13 @@ var server = http.createServer(app).listen(app.get('port'), function(){
 
 
 io = require('socket.io').listen(server);
-        io.set('transports', ['websocket',
-            'xhr-polling', 'jsonp-polling', 'htmlfile'
-        ]);
-        io.set('origins', '*:*');
+io.set('transports', ['websocket',
+    'xhr-polling', 'jsonp-polling', 'htmlfile'
+    ]);
+io.set('origins', '*:*');
 
 
 io.set('log level', 1);
-
-
-
 
 io.sockets.on('connection', function (socket) {
 
@@ -84,8 +84,6 @@ io.sockets.on('connection', function (socket) {
         socket.emit('maxclients', { socketid: socket.id });
         socket.disconnect();
     }
-
-
 
     var client = { name: 'Anonymous', socketid: socket.id };
 
@@ -96,43 +94,94 @@ io.sockets.on('connection', function (socket) {
     logger('Sending tiles & rendercommand to client : ' + socket.id);
 
 
-function SaveTilesToDB(partkey,databasetable, arrayoftiles)
-{
- 
-    var stringrep = arrayoftiles;
-    stringrep = JSON.stringify(tileArray);
+    function UpdateTilesMovedInDB()
+    {
+       
+        totalTilesMoved = totalTilesMoved + 1;
+        var task = { 
+          PartitionKey: entGen.String(dbpartitionkeyTileMoves),
+          RowKey: entGen.String('2'),
+          data: entGen.Int32(totalTilesMoved)
+      };
+    
+        tableSvc.insertOrReplaceEntity(dbTable, task, function(error, result, response)
+        {
+       
+            if(!error) 
+            {
+                // do nothing
+          
+            }
+            else
+            {
+               alertToClientBrowser("Error Updating 'UpdateTilesMovedInDB'");
+            }
+        });
+
+        socket.emit('updatetotaltilesmoves', totalTilesMoved);
+
+    }
+
+    function GetTilesMovedFromDB()
+    {
+        tableSvc.retrieveEntity(dbTable, dbpartitionkeyTileMoves, '2', function(error, result, response){
+        if(!error)
+        {
+
+            // result contains the entity
+            totalTilesMoved =  Number(result.data._);
+
+
+            socket.emit('updatetotaltilesmoves', totalTilesMoved);
+        }
+        else
+        {
+            totalTilesMoved = 1;
+            alertToClientBrowser("ERROR retrieveing moves 'GetTilesMovedFromDB' " + error);
+        }
+    });
+    }
+
+
+    function SaveTilesToDB(partkey,databasetable, arrayoftiles)
+    {
+
+        var stringrep = arrayoftiles;
+        stringrep = JSON.stringify(tileArray);
 
         var task = { 
-                  PartitionKey: entGen.String(partkey),
-                  RowKey: entGen.String('1'),
-                  data: entGen.String(stringrep)
-                   };
+          PartitionKey: entGen.String(partkey),
+          RowKey: entGen.String('1'),
+          data: entGen.String(stringrep)
+      };
 
-    alertToClientBrowser("Trying to saving tiles to db");
+      alertToClientBrowser("Trying to saving tiles to db");
 
-tableSvc.updateEntity(databasetable, task, function(error, result, response){
-  if(!error) {
+      tableSvc.updateEntity(databasetable, task, function(error, result, response){
+        if(!error) {
 
-    var d = new Date();
+            var d = new Date();
 
-    alertToClientBrowser("DB Record update successful @ " + d.getHours() + ":" + d.getMinutes() + ":" + d.getSeconds());
+            alertToClientBrowser("DB Record update successful @ " + d.getHours() + ":" + d.getMinutes() + ":" + d.getSeconds());
+        }
+        else
+        {
+         alertToClientBrowser("Error Updating the database");
+     }
+ });
+
   }
-  else
-  {
-     alertToClientBrowser("Error Updating the database");
-  }
-});
 
-}
+  GetTilesMovedFromDB();
 
 // check that the table does not already exist
 tableSvc.createTableIfNotExists(dbTable, function(error, result, response){
 
 
-if (error)
-{
-alertToClientBrowser("ERROR Testing for creation of table");
-}
+    if (error)
+    {
+        alertToClientBrowser("ERROR Testing for creation of table");
+    }
 
     alertToClientBrowser("Testing for creation of table");
     if(result == true)
@@ -140,24 +189,24 @@ alertToClientBrowser("ERROR Testing for creation of table");
         // table newly created
 
         GenerateTiles();
-         alertToClientBrowser("Generated tiles");
-         alertToClientBrowser("Tile length " + tileArray.length)
+        alertToClientBrowser("Generated tiles");
+        alertToClientBrowser("Tile length " + tileArray.length)
 
 
-    var stringrep = tileArray;
-    stringrep = JSON.stringify(tileArray);
+        var stringrep = tileArray;
+        stringrep = JSON.stringify(tileArray);
 
         var task = { 
-                  PartitionKey: entGen.String(dbpartitionkey),
-                  RowKey: entGen.String('1'),
-                  data: entGen.String(stringrep)
-                   };
+          PartitionKey: entGen.String(dbpartitionkey),
+          RowKey: entGen.String('1'),
+          data: entGen.String(stringrep)
+      };
 
 
         // save the data
         tableSvc.insertEntity(dbTable,task, function (error, result, response) 
         {
-            
+
             if (result)
             {
                 alertToClientBrowser("Tiles inserted into db " + JSON.stringify(task));
@@ -169,7 +218,7 @@ alertToClientBrowser("ERROR Testing for creation of table");
 
             if(error)
             {
-            alertToClientBrowser("error for creation of table and tiles");
+                alertToClientBrowser("error for creation of table and tiles");
 
             }
         });
@@ -181,14 +230,12 @@ alertToClientBrowser("ERROR Testing for creation of table");
     }
     else
     {
-         alertToClientBrowser("Table already exists");
+     alertToClientBrowser("Table already exists");
         // table already exists - load in data
 
         tableSvc.retrieveEntity(dbTable, dbpartitionkey, '1', function(error, result, response){
-        //alertToClientBrowser("---> " + JSON.stringify(result));
-        //alertToClientBrowser("Tryign to retrieve tiles from db " + error + " " + JSON.stringify(result) + " " + JSON.stringify(response));
-          if(!error)
-          {
+        if(!error)
+        {
 
             alertToClientBrowser("Retrieveing data...");
             //alertToClientBrowser(JSON.stringify(result.data._));
@@ -204,25 +251,25 @@ alertToClientBrowser("ERROR Testing for creation of table");
             //alertToClientBrowser("Array length : " + tileArray.length);
 
             //alertToClientBrowser("Retrieveing tiles from db " + result.data);
-          }
-          else
-          {
+        }
+        else
+        {
             alertToClientBrowser("ERROR Retrieveing tiles from db " + error);
-          }
-        });
+        }
+    });
     }
 
     
     //socket.emit('SendTilesAndRender', { arrayofTiles: JSON.stringify(tileArray) });
 
-   
+
 });
 
 
 
-    
 
-    socket.on('tilemoving', function (data) {
+
+socket.on('tilemoving', function (data) {
         // update the position of the tile
         tileArray[Number(data.id)].x = data.xpos;
         tileArray[Number(data.id)].y = data.ypos;
@@ -232,9 +279,10 @@ alertToClientBrowser("ERROR Testing for creation of table");
 
     });
 
-    socket.on('canmovetime', function (data) {
+socket.on('canmovetime', function (data) {
     //alertToClientBrowser("Saving to db : " + dbpartitionkey + " " + dbTable + " " + tableSvc + " " + JSON.stringify(tileArray));
-        SaveTilesToDB(dbpartitionkey,dbTable,tileArray);
+    SaveTilesToDB(dbpartitionkey,dbTable,tileArray);
+    UpdateTilesMovedInDB();
     
         // id: idofitembeingdragged, candrag: 'true'
         // let all the ther users know its being updated
@@ -242,8 +290,8 @@ alertToClientBrowser("ERROR Testing for creation of table");
 
     });
 
-    socket.on('disconnect', function (data) {
-        
+socket.on('disconnect', function (data) {
+
         // get the position of the client in the array and remove
         var clientArrayPosition = GetClientIndexPosition(socket.id);
         RemoveClientFromArray(clientArrayPosition);
@@ -251,7 +299,7 @@ alertToClientBrowser("ERROR Testing for creation of table");
 
         logger("Client diconnected ID : " + socket.id);
     });
-   
+
 });
 
 
@@ -259,6 +307,14 @@ function alertToClientBrowser(data)
 {
     io.sockets.emit('AlertClient', data);
 }
+
+function UpdateTotalNumberOfTilesMoved(data)
+{
+    io.sockets.emit('updatetotaltilesmoves', data);
+}
+
+
+
 
 
 console.log("====================== SERVER STARTING ======================");
@@ -295,7 +351,7 @@ function GetClientIndexPosition(socketid) {
 function RemoveClientFromArray(indexpos) {
     if (indexpos >= 0) {
         clientArray.splice(indexpos, 1);
-       
+
     }
 }
 
